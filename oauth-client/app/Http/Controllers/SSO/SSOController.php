@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\SSO;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -50,6 +52,21 @@ class SSOController extends Controller
             'Authorization' => 'Bearer ' . $access_token
         ])->get("http://127.0.0.1:8000/api/user");
 
-        return $response->json();
+        $userData = $response->json();
+        try {
+            $email = $userData["email"];
+        } catch (\Throwable $th) {
+            return redirect()->route('login')->withErrors(["message" => "Invalid User"]);
+        }
+        $user = User::where("email", $email)->first();
+        if (!$user) {
+            $user = new User;
+            $user->name = $userData["name"];
+            $user->email = $userData["email"];
+            $user->email_verified_at = $userData["email_verified_at"];
+            $user->save();
+        }
+        Auth::login($user);
+        return redirect()->route("home");
     }
 }
