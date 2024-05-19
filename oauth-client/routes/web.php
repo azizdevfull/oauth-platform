@@ -36,5 +36,17 @@ Route::get("/callback", function (Request $request) {
         'redirect_uri' => 'http://127.0.0.1:8080/callback',
         'code' => $request->code
     ]);
+    $request->session()->put($response->json());
+    return redirect('/authuser');
+});
+
+
+Route::get('/authuser', function (Request $request) {
+    $access_token = $request->session()->get('access_token');
+    $response = Http::withHeaders([
+        'Accept' => 'application/json',
+        'Authorization' => 'Bearer ' . $access_token
+    ])->get("http://127.0.0.1:8000/api/user");
+
     return $response->json();
 });
